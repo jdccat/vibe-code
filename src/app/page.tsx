@@ -5,6 +5,7 @@ import { database } from '@/lib/firebase'
 import { ref, onValue, set, push } from 'firebase/database'
 
 interface Comment {
+  id?: string;  // Firebase에서 생성되는 ID
   text: string;
   timestamp: string;
 }
@@ -39,7 +40,7 @@ export default function Home() {
       console.log('댓글 데이터 수신:', snapshot.val());
       const data = snapshot.val();
       if (data) {
-        const commentsArray = Object.entries(data).map(([id, comment]: [string, any]) => ({
+        const commentsArray = Object.entries(data).map(([id, comment]: [string, Comment]) => ({
           id,
           ...comment
         }));
