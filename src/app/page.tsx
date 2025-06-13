@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { database } from '@/lib/firebase'
+import { ref, onValue, set, push } from 'firebase/database'
 
 interface Comment {
   text: string;
@@ -15,21 +17,68 @@ export default function Home() {
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
 
+  // Firebase에서 데이터 로드
+  useEffect(() => {
+    console.log('Firebase 연결 시도...');
+    const votesRef = ref(database, 'votes');
+    const commentsRef = ref(database, 'comments');
+
+    // 투표 데이터 구독
+    onValue(votesRef, (snapshot) => {
+      console.log('투표 데이터 수신:', snapshot.val());
+      const data = snapshot.val();
+      if (data) {
+        setVotes(data);
+      }
+    }, (error) => {
+      console.error('투표 데이터 로드 에러:', error);
+    });
+
+    // 댓글 데이터 구독
+    onValue(commentsRef, (snapshot) => {
+      console.log('댓글 데이터 수신:', snapshot.val());
+      const data = snapshot.val();
+      if (data) {
+        const commentsArray = Object.entries(data).map(([id, comment]: [string, any]) => ({
+          id,
+          ...comment
+        }));
+        setComments(commentsArray);
+      }
+    }, (error) => {
+      console.error('댓글 데이터 로드 에러:', error);
+    });
+  }, []);
+
   const handleVote = (type: 'yes' | 'no') => {
-    setVotes(prev => ({
-      ...prev,
-      [type]: prev[type] + 1
-    }))
+    console.log('투표 시도:', type);
+    const newVotes = {
+      ...votes,
+      [type]: votes[type] + 1
+    };
+    setVotes(newVotes);
+    // Firebase에 투표 데이터 저장
+    set(ref(database, 'votes'), newVotes)
+      .then(() => console.log('투표 저장 성공'))
+      .catch((error) => console.error('투표 저장 에러:', error));
   }
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) return
 
-    setComments(prev => [...prev, {
+    console.log('댓글 추가 시도:', newComment);
+    const newCommentObj = {
       text: newComment,
       timestamp: new Date().toLocaleString()
-    }])
+    };
+
+    // Firebase에 댓글 추가
+    const commentsRef = ref(database, 'comments');
+    push(commentsRef, newCommentObj)
+      .then(() => console.log('댓글 저장 성공'))
+      .catch((error) => console.error('댓글 저장 에러:', error));
+    
     setNewComment('')
   }
 
