@@ -5,12 +5,7 @@ import { database } from '@/lib/firebase'
 import { ref, onValue, set, push } from 'firebase/database'
 
 interface Comment {
-  id?: string;  // Firebase에서 생성되는 ID
-  text: string;
-  timestamp: string;
-}
-
-interface FirebaseComment {
+  id?: string;
   text: string;
   timestamp: string;
 }
@@ -45,14 +40,11 @@ export default function Home() {
       console.log('댓글 데이터 수신:', snapshot.val());
       const data = snapshot.val();
       if (data) {
-        const commentsArray = Object.entries(data).map(([id, comment]) => {
-          const commentData = comment as { text: string; timestamp: string };
-          return {
-            id,
-            text: commentData.text,
-            timestamp: commentData.timestamp
-          };
-        });
+        const commentsArray = Object.entries(data).map(([id, comment]) => ({
+          id,
+          text: (comment as { text: string }).text,
+          timestamp: (comment as { timestamp: string }).timestamp
+        }));
         setComments(commentsArray);
       }
     }, (error) => {
@@ -150,8 +142,8 @@ export default function Home() {
           </form>
 
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {comments.map((comment, index) => (
-              <div key={index} className="p-3 bg-white rounded-lg shadow">
+            {comments.map((comment) => (
+              <div key={comment.id} className="p-3 bg-white rounded-lg shadow">
                 <div className="text-gray-800">{comment.text}</div>
                 <div className="text-xs text-gray-500">{comment.timestamp}</div>
               </div>
