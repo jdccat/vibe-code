@@ -10,6 +10,11 @@ interface Comment {
   timestamp: string;
 }
 
+interface FirebaseComment {
+  text: string;
+  timestamp: string;
+}
+
 export default function Home() {
   const [votes, setVotes] = useState({
     yes: 0,
@@ -40,10 +45,14 @@ export default function Home() {
       console.log('댓글 데이터 수신:', snapshot.val());
       const data = snapshot.val();
       if (data) {
-        const commentsArray = Object.entries(data).map(([id, comment]: [string, Comment]) => ({
-          id,
-          ...comment
-        }));
+        const commentsArray = Object.entries(data).map(([id, comment]) => {
+          const commentData = comment as { text: string; timestamp: string };
+          return {
+            id,
+            text: commentData.text,
+            timestamp: commentData.timestamp
+          };
+        });
         setComments(commentsArray);
       }
     }, (error) => {
