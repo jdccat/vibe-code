@@ -40,12 +40,20 @@ export default function Home() {
       console.log('댓글 데이터 수신:', snapshot.val());
       const data = snapshot.val();
       if (data) {
-        const commentsArray = Object.entries(data).map(([id, comment]) => ({
-          id,
-          text: (comment as { text: string }).text,
-          timestamp: (comment as { timestamp: number }).timestamp
-        }));
-        commentsArray.sort((a, b) => b.timestamp - a.timestamp);
+        const commentsArray = Object.entries(data).map(([id, comment]) => {
+          const c = comment as { text: string; timestamp: string | number };
+          return {
+            id,
+            text: c.text,
+            timestamp: c.timestamp
+          };
+        });
+        // timestamp가 숫자면 그대로, 문자열이면 Date로 변환해서 비교
+        commentsArray.sort((a, b) => {
+          const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+          const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
+          return timeB - timeA;
+        });
         setComments(commentsArray);
       } else {
         setComments([]);
