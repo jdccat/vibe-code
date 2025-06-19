@@ -15,7 +15,7 @@ function parseKoreanDate(str: string): number {
   const regex = /(\d{4})\. (\d{1,2})\. (\d{1,2})\. (오전|오후) (\d{1,2}):(\d{2}):(\d{2})/;
   const match = str.match(regex);
   if (!match) return 0;
-  let [_, year, month, day, ampm, hour, min, sec] = match;
+  const [, year, month, day, ampm, hour, min, sec] = match;
   let h = parseInt(hour, 10);
   if (ampm === '오후' && h < 12) h += 12;
   if (ampm === '오전' && h === 12) h = 0;
