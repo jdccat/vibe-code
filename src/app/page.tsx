@@ -7,7 +7,22 @@ import { database } from '@/lib/firebase'
 interface Comment {
   id?: string;
   text: string;
-  timestamp: number;
+  timestamp: string; // 문자열로 관리
+}
+
+// 한국어 날짜 문자열을 파싱해서 숫자(UNIX 타임스탬프)로 변환
+function parseKoreanDate(str: string): number {
+  const regex = /(\d{4})\. (\d{1,2})\. (\d{1,2})\. (오전|오후) (\d{1,2}):(\d{2}):(\d{2})/;
+  const match = str.match(regex);
+  if (!match) return 0;
+  let [_, year, month, day, ampm, hour, min, sec] = match;
+  let h = parseInt(hour, 10);
+  if (ampm === '오후' && h < 12) h += 12;
+  if (ampm === '오전' && h === 12) h = 0;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return Date.parse(
+    `${year}-${pad(Number(month))}-${pad(Number(day))}T${pad(h)}:${pad(Number(min))}:${pad(Number(sec))}`
+  );
 }
 
 export default function Home() {
@@ -36,14 +51,17 @@ export default function Home() {
       const data = snapshot.val();
       if (data) {
         const commentsArray = Object.entries(data).map(([id, comment]) => {
-          const c = comment as { text: string; timestamp: number };
+          const c = comment as { text: string; timestamp: string };
           return {
             id,
             text: c.text,
             timestamp: c.timestamp
           };
         });
-        commentsArray.sort((a, b) => b.timestamp - a.timestamp);
+        // 한국어 문자열을 파싱해서 내림차순 정렬
+        commentsArray.sort(
+          (a, b) => parseKoreanDate(b.timestamp) - parseKoreanDate(a.timestamp)
+        );
         setComments(commentsArray);
       } else {
         setComments([]);
@@ -82,7 +100,7 @@ export default function Home() {
 
     const newCommentObj = {
       text: newComment,
-      timestamp: Date.now() // 숫자(UNIX 타임스탬프)로 저장
+      timestamp: new Date().toLocaleString() // 한국어 문자열로 저장
     };
 
     const commentsRef = ref(database, 'comments');
@@ -155,7 +173,7 @@ export default function Home() {
               <div key={comment.id} className="p-3 bg-white rounded-lg shadow">
                 <div className="text-gray-800">{comment.text}</div>
                 <div className="text-xs text-gray-500">
-                  {new Date(comment.timestamp).toLocaleString()}
+                  {comment.timestamp}
                 </div>
               </div>
             ))}
