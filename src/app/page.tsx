@@ -42,18 +42,20 @@ export default function Home() {
       if (data) {
         const commentsArray = Object.entries(data).map(([id, comment]) => {
           const c = comment as { text: string; timestamp: string | number };
+          // timestamp가 string이면 number로 변환
+          let ts: number;
+          if (typeof c.timestamp === 'number') {
+            ts = c.timestamp;
+          } else {
+            ts = new Date(c.timestamp).getTime();
+          }
           return {
             id,
             text: c.text,
-            timestamp: c.timestamp
+            timestamp: ts
           };
         });
-        // timestamp가 숫자면 그대로, 문자열이면 Date로 변환해서 비교
-        commentsArray.sort((a, b) => {
-          const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
-          const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
-          return timeB - timeA;
-        });
+        commentsArray.sort((a, b) => b.timestamp - a.timestamp);
         setComments(commentsArray);
       } else {
         setComments([]);
