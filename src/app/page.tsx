@@ -40,7 +40,7 @@ export default function Home() {
           .map(([id, comment]) => ({
             id,
             text: (comment as { text: string }).text,
-            timestamp: (comment as { timestamp: string }).timestamp
+            timestamp: (comment as { timestamp: string }).timestamp // 표기용
           }));
         setComments(commentsArray);
       } else {
@@ -152,6 +152,7 @@ export default function Home() {
             {comments.map((comment) => (
               <div key={comment.id} className="p-3 bg-white rounded-lg shadow">
                 <div className="text-gray-800">{comment.text}</div>
+                <div className="text-xs text-gray-500">{comment.timestamp}</div>
               </div>
             ))}
           </div>
