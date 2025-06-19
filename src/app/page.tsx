@@ -7,7 +7,7 @@ import { ref, onValue, set, push } from 'firebase/database'
 interface Comment {
   id?: string;
   text: string;
-  timestamp: string;
+  timestamp: number;
 }
 
 export default function Home() {
@@ -43,11 +43,9 @@ export default function Home() {
         const commentsArray = Object.entries(data).map(([id, comment]) => ({
           id,
           text: (comment as { text: string }).text,
-          timestamp: (comment as { timestamp: string }).timestamp
+          timestamp: (comment as { timestamp: number }).timestamp
         }));
-        commentsArray.sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
+        commentsArray.sort((a, b) => b.timestamp - a.timestamp);
         setComments(commentsArray);
       } else {
         setComments([]);
@@ -84,7 +82,7 @@ export default function Home() {
     console.log('댓글 추가 시도:', newComment);
     const newCommentObj = {
       text: newComment,
-      timestamp: new Date().toLocaleString()
+      timestamp: Date.now()
     };
 
     // Firebase에 댓글 추가
