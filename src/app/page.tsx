@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { database } from '@/lib/firebase'
-import { ref, onValue, set, push, runTransaction } from 'firebase/database'
+import { ref, onValue, push, runTransaction } from 'firebase/database'
 
 interface Comment {
   id?: string;
