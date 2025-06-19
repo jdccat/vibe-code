@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { database } from '@/lib/firebase'
-import { ref, onValue, set, push } from 'firebase/database'
+import { ref, onValue, set, push, runTransaction } from 'firebase/database'
 
 interface Comment {
   id?: string;
@@ -70,12 +70,19 @@ export default function Home() {
       alert('이미 투표하셨습니다.');
       return;
     }
-    const newVotes = {
-      ...votes,
-      [type]: votes[type] + 1
-    };
-    setVotes(newVotes);
-    set(ref(database, 'votes'), newVotes)
+
+    const votesRef = ref(database, 'votes');
+    runTransaction(votesRef, (currentVotes) => {
+      // currentVotes가 없으면 초기값 세팅
+      if (!currentVotes) {
+        return { yes: type === 'yes' ? 1 : 0, no: type === 'no' ? 1 : 0 };
+      }
+      // 기존 값에 1 추가
+      return {
+        yes: type === 'yes' ? (currentVotes.yes || 0) + 1 : currentVotes.yes || 0,
+        no: type === 'no' ? (currentVotes.no || 0) + 1 : currentVotes.no || 0,
+      };
+    })
       .then(() => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('voted', 'true');
