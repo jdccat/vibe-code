@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ref, onValue, push, runTransaction } from 'firebase/database'
 import { database } from '@/lib/firebase'
-import { ref, onValue, push, runTransaction, set } from 'firebase/database'
 
 interface Comment {
   id?: string;
@@ -20,24 +20,19 @@ export default function Home() {
 
   // Firebase에서 데이터 로드
   useEffect(() => {
-    console.log('Firebase 연결 시도...');
     const votesRef = ref(database, 'votes');
     const commentsRef = ref(database, 'comments');
 
     // 투표 데이터 구독
     onValue(votesRef, (snapshot) => {
-      console.log('투표 데이터 수신:', snapshot.val());
       const data = snapshot.val();
       if (data) {
         setVotes(data);
       }
-    }, (error) => {
-      console.error('투표 데이터 로드 에러:', error);
     });
 
     // 댓글 데이터 구독
     onValue(commentsRef, (snapshot) => {
-      console.log('댓글 데이터 수신:', snapshot.val());
       const data = snapshot.val();
       if (data) {
         const commentsArray = Object.entries(data).map(([id, comment]) => {
@@ -53,40 +48,20 @@ export default function Home() {
       } else {
         setComments([]);
       }
-    }, (error) => {
-      console.error('댓글 데이터 로드 에러:', error);
-    });
-
-    // [임시] 기존 문자열 timestamp를 숫자로 변환하는 마이그레이션 코드
-    onValue(commentsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        Object.entries(data).forEach(([id, comment]) => {
-          const c = comment as { text: string; timestamp: string | number };
-          if (typeof c.timestamp === 'string') {
-            const ts = Date.parse(c.timestamp);
-            if (!isNaN(ts)) {
-              set(ref(database, `comments/${id}/timestamp`), ts);
-            }
-          }
-        });
-      }
     });
   }, []);
 
+  // 투표 핸들러 (runTransaction 사용)
   const handleVote = (type: 'yes' | 'no') => {
     if (typeof window !== 'undefined' && localStorage.getItem('voted')) {
       alert('이미 투표하셨습니다.');
       return;
     }
-
     const votesRef = ref(database, 'votes');
     runTransaction(votesRef, (currentVotes) => {
-      // currentVotes가 없으면 초기값 세팅
       if (!currentVotes) {
         return { yes: type === 'yes' ? 1 : 0, no: type === 'no' ? 1 : 0 };
       }
-      // 기존 값에 1 추가
       return {
         yes: type === 'yes' ? (currentVotes.yes || 0) + 1 : currentVotes.yes || 0,
         no: type === 'no' ? (currentVotes.no || 0) + 1 : currentVotes.no || 0,
@@ -96,25 +71,23 @@ export default function Home() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('voted', 'true');
         }
-        console.log('투표 저장 성공');
       })
       .catch((error) => console.error('투표 저장 에러:', error));
   }
 
+  // 댓글 추가 핸들러
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) return
 
-    console.log('댓글 추가 시도:', newComment);
     const newCommentObj = {
       text: newComment,
-      timestamp: new Date().toLocaleString() // 항상 문자열로 저장
+      timestamp: Date.now() // 숫자(UNIX 타임스탬프)로 저장
     };
 
-    // Firebase에 댓글 추가
     const commentsRef = ref(database, 'comments');
     push(commentsRef, newCommentObj)
-      .then(() => console.log('댓글 저장 성공'))
+      .then(() => {})
       .catch((error) => console.error('댓글 저장 에러:', error));
     
     setNewComment('')
