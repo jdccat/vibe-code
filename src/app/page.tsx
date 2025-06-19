@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { database } from '@/lib/firebase'
-import { ref, onValue, push, runTransaction } from 'firebase/database'
+import { ref, onValue, push, runTransaction, set } from 'firebase/database'
 
 interface Comment {
   id?: string;
@@ -41,17 +41,11 @@ export default function Home() {
       const data = snapshot.val();
       if (data) {
         const commentsArray = Object.entries(data).map(([id, comment]) => {
-          const c = comment as { text: string; timestamp: string | number };
-          let ts: number;
-          if (typeof c.timestamp === 'number') {
-            ts = c.timestamp;
-          } else {
-            ts = new Date(c.timestamp).getTime();
-          }
+          const c = comment as { text: string; timestamp: number };
           return {
             id,
             text: c.text,
-            timestamp: ts
+            timestamp: c.timestamp
           };
         });
         commentsArray.sort((a, b) => b.timestamp - a.timestamp);
@@ -61,6 +55,22 @@ export default function Home() {
       }
     }, (error) => {
       console.error('댓글 데이터 로드 에러:', error);
+    });
+
+    // [임시] 기존 문자열 timestamp를 숫자로 변환하는 마이그레이션 코드
+    onValue(commentsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        Object.entries(data).forEach(([id, comment]) => {
+          const c = comment as { text: string; timestamp: string | number };
+          if (typeof c.timestamp === 'string') {
+            const ts = Date.parse(c.timestamp);
+            if (!isNaN(ts)) {
+              set(ref(database, `comments/${id}/timestamp`), ts);
+            }
+          }
+        });
+      }
     });
   }, []);
 
