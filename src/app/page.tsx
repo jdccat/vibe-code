@@ -41,18 +41,20 @@ export default function Home() {
       const data = snapshot.val();
       if (data) {
         const commentsArray = Object.entries(data).map(([id, comment]) => {
-          const c = comment as { text: string; timestamp: string };
+          const c = comment as { text: string; timestamp: string | number };
+          let ts: number;
+          if (typeof c.timestamp === 'number') {
+            ts = c.timestamp;
+          } else {
+            ts = new Date(c.timestamp).getTime();
+          }
           return {
             id,
             text: c.text,
-            timestamp: c.timestamp
+            timestamp: ts
           };
         });
-        // timestamp를 Date로 변환해서 내림차순 정렬
-        commentsArray.sort(
-          (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
+        commentsArray.sort((a, b) => b.timestamp - a.timestamp);
         setComments(commentsArray);
       } else {
         setComments([]);
@@ -169,7 +171,9 @@ export default function Home() {
             {comments.map((comment) => (
               <div key={comment.id} className="p-3 bg-white rounded-lg shadow">
                 <div className="text-gray-800">{comment.text}</div>
-                <div className="text-xs text-gray-500">{comment.timestamp}</div>
+                <div className="text-xs text-gray-500">
+                  {new Date(comment.timestamp).toLocaleString()}
+                </div>
               </div>
             ))}
           </div>
