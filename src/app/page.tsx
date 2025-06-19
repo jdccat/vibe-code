@@ -41,21 +41,18 @@ export default function Home() {
       const data = snapshot.val();
       if (data) {
         const commentsArray = Object.entries(data).map(([id, comment]) => {
-          const c = comment as { text: string; timestamp: string | number };
-          // timestamp가 string이면 number로 변환
-          let ts: number;
-          if (typeof c.timestamp === 'number') {
-            ts = c.timestamp;
-          } else {
-            ts = new Date(c.timestamp).getTime();
-          }
+          const c = comment as { text: string; timestamp: string };
           return {
             id,
             text: c.text,
-            timestamp: ts
+            timestamp: c.timestamp
           };
         });
-        commentsArray.sort((a, b) => b.timestamp - a.timestamp);
+        // timestamp를 Date로 변환해서 내림차순 정렬
+        commentsArray.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
         setComments(commentsArray);
       } else {
         setComments([]);
@@ -99,7 +96,7 @@ export default function Home() {
     console.log('댓글 추가 시도:', newComment);
     const newCommentObj = {
       text: newComment,
-      timestamp: Date.now()
+      timestamp: new Date().toLocaleString() // 항상 문자열로 저장
     };
 
     // Firebase에 댓글 추가
