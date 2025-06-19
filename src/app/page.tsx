@@ -45,8 +45,12 @@ export default function Home() {
           text: (comment as { text: string }).text,
           timestamp: (comment as { timestamp: string }).timestamp
         }));
-        commentsArray.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        commentsArray.sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
         setComments(commentsArray);
+      } else {
+        setComments([]);
       }
     }, (error) => {
       console.error('댓글 데이터 로드 에러:', error);
