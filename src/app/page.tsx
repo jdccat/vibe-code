@@ -45,6 +45,7 @@ export default function Home() {
           text: (comment as { text: string }).text,
           timestamp: (comment as { timestamp: string }).timestamp
         }));
+        commentsArray.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         setComments(commentsArray);
       }
     }, (error) => {
@@ -53,15 +54,22 @@ export default function Home() {
   }, []);
 
   const handleVote = (type: 'yes' | 'no') => {
-    console.log('투표 시도:', type);
+    if (typeof window !== 'undefined' && localStorage.getItem('voted')) {
+      alert('이미 투표하셨습니다.');
+      return;
+    }
     const newVotes = {
       ...votes,
       [type]: votes[type] + 1
     };
     setVotes(newVotes);
-    // Firebase에 투표 데이터 저장
     set(ref(database, 'votes'), newVotes)
-      .then(() => console.log('투표 저장 성공'))
+      .then(() => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('voted', 'true');
+        }
+        console.log('투표 저장 성공');
+      })
       .catch((error) => console.error('투표 저장 에러:', error));
   }
 
